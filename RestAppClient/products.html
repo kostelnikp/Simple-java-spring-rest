@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Product Management</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
+                aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav">
+                <a class="nav-link" href="index.html">Home</a>
+                <a class="nav-link" href="customer.html">Customers</a>
+                <a class="nav-link active" href="products.html">Products</a>
+                <a class="nav-link" href="orders.html">Orders</a>
+                <a class="nav-link" href="productOrders.html">Product-Orders</a>
+            </div>
+        </div>
+    </div>
+</nav>
+<div class="container mt-5">
+    <h2>Product Management</h2>
+    <hr>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="row">
+                <h4 class="col-md-10">Product List</h4>
+                <button class="btn btn-sm btn-primary col-md-2" data-bs-toggle="modal"
+                        data-bs-target="#addProductModal" onclick="clearModal()">Add Product
+                </button>
+            </div>
+            <table id="productTable" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="productList">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProductModalLabel">Add/Edit Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <div class="form-group">
+                        <input type="hidden" id="productId">
+                        <label for="name">Name:</label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description:</label>
+                        <input type="text" class="form-control" id="description" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">Price:</label>
+                        <input type="number" class="form-control" id="price" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2" id="saveBtn">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addDetailModal" tabindex="-1" aria-labelledby="addDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addDetailModalLabel">Add Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="detailForm">
+                    <div class="form-group">
+                        <input type="hidden" id="productIdDetail">
+                        <label for="detail">Detail:</label>
+                        <input type="text" class="form-control" id="detail" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2" id="saveDetailBtn">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="productDetailModal" tabindex="-1" aria-labelledby="productDetailModalLabel" aria-hidden="true">
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+<script>
+    function getAllProducts() {
+        fetch("http://localhost:9090/getAllProducts")
+            .then(response => response.json())
+            .then(data => {
+                const productTable = document.getElementById("productList");
+                productTable.innerHTML = "";
+                data.forEach(product => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${product.id}</td>
+                        <td>${product.name}</td>
+                        <td>${product.description}</td>
+                        <td>$${product.price}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editProduct(${product.id})" data-bs-toggle="modal" data-bs-target="#addProductModal">Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})">Delete</button>
+                            <button class="btn btn-sm btn-secondary" onclick="showProductDetails(${product.id})">Details</button>
+                            <button class="btn btn-sm btn-secondary" onclick="addDetail(${product.id}); clearModal();">Add Detail</button>
+                        </td>
+                    `;
+                    productTable.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                const productTable = document.getElementById("productList");
+                productTable.innerHTML = "<tr><td colspan='4'>No products found.</td></tr>";
+            });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("detailForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            const productId = document.getElementById("productIdDetail").value;
+            const detail = document.getElementById("detail").value;
+            const productDetail = {detail: detail, product : {id: productId}};
+
+            fetch("http://localhost:9090/createProductDetail", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(productDetail)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Product detail added successfully", data);
+                    const addDetailModal = new bootstrap.Modal(document.getElementById('addDetailModal'));
+                    addDetailModal.hide();
+                    getAllProducts();
+                })
+                .catch(error => console.error("Error:", error));
+        });
+    });
+
+    function editProduct(id) {
+        fetch(`http://localhost:9090/getProductById/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("productId").value = data.id;
+                document.getElementById("name").value = data.name;
+                document.getElementById("description").value = data.description;
+                document.getElementById("price").value = data.price;
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+    function showProductDetails(id) {
+        fetch(`http://localhost:9090/getProductDetailById/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                let detailModal = document.getElementById("productDetailModal");
+                detailModal.innerHTML = "";
+                data.forEach(detail => {
+                    detailModal.innerHTML +=  detailModal.innerHTML = `
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="productDetailModalLabel">Product Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>Detail:</strong> ${detail.detail}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                })
+                const modal = new bootstrap.Modal(detailModal);
+                modal.show();
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+    function addDetail(productId) {
+        document.getElementById("productIdDetail").value = productId;
+        const addDetailModal = new bootstrap.Modal(document.getElementById('addDetailModal'));
+        addDetailModal.show();
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("productForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            const id = document.getElementById("productId").value;
+            const name = document.getElementById("name").value;
+            const description = document.getElementById("description").value;
+            const price = document.getElementById("price").value;
+            const product = {id: id, name: name, description: description, price: price};
+
+            fetch("http://localhost:9090/createProduct", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(product)
+            })
+                .then(() => {
+                    getAllProducts();
+                    document.getElementById("productId").value = '';
+                    document.getElementById("name").value = '';
+                    document.getElementById("description").value = '';
+                    document.getElementById("price").value = '';
+                })
+                .catch(error => console.error("Error:", error));
+        });
+    });
+
+    function deleteProduct(id) {
+        fetch(`http://localhost:9090/deleteProductById/${id}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+            .then(() => {
+                console.log("Product deleted successfully");
+                getAllProducts();
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+    function clearModal() {
+        document.getElementById("productId").value = '';
+        document.getElementById("name").value = '';
+        document.getElementById("description").value = '';
+        document.getElementById("price").value = '';
+        document.getElementById("detail").value = '';
+    }
+
+    window.onload = function () {
+        getAllProducts();
+    };
+</script>
+
+</body>
+</html>
